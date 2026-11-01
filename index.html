@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inductive Reasoning Challenge</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0265d6',
+                            700: '#034ea2',
+                            900: '#0c2a52',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .grid-cell {
+            aspect-ratio: 1;
+            transition: all 0.2s ease;
+        }
+        .candidate-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .candidate-card:hover {
+            transform: translateY(-2px);
+        }
+        .shape-svg {
+            width: 70%;
+            height: 70%;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
+            pointer-events: none;
+        }
+        .grid-cell-editable {
+            aspect-ratio: 1;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .grid-cell-editable:hover {
+            transform: scale(1.05);
+            border-color: #3b82f6;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header Navigation Bar -->
+    <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Game Logo / Title -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                    <i class="fa-solid fa-brain text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white">Inductive Challenge</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Capgemini Format Reasoning Test</p>
+                </div>
+            </div>
+
+            <!-- Stats Header Bar -->
+            <div id="game-stats-bar" class="flex items-center space-x-4 sm:space-x-6">
+                <!-- Level -->
+                <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <i class="fa-solid fa-layer-group text-blue-500 text-sm"></i>
+                    <span class="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">Level</span>
+                    <span id="level-display" class="font-bold text-slate-800 dark:text-slate-100 text-sm">1/10</span>
+                </div>
+
+                <!-- Timer -->
+                <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <i class="fa-solid fa-stopwatch text-amber-500 text-sm"></i>
+                    <span id="timer-display" class="font-mono font-bold text-slate-800 dark:text-slate-100 text-sm">04:00</span>
+                </div>
+
+                <!-- Score -->
+                <div class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600">
+                    <i class="fa-solid fa-trophy text-yellow-500 text-sm"></i>
+                    <span id="score-display" class="font-bold text-slate-800 dark:text-slate-100 text-sm">0 PTS</span>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center space-x-2">
+                <button id="mode-toggle-btn" onclick="toggleBuilderMode()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition">
+                    <i class="fa-solid fa-pen-to-square mr-1"></i> <span id="mode-text">Matrix Builder</span>
+                </button>
+                <button onclick="toggleDarkMode()" class="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    <i class="fa-solid fa-moon dark:hidden text-sm"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6">
+
+        <!-- Banner / Instructions bar -->
+        <div class="bg-blue-600 text-white rounded-xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start space-x-3">
+                <div class="p-2 bg-white/10 rounded-lg shrink-0 mt-0.5">
+                    <i class="fa-solid fa-lightbulb text-yellow-300 text-lg"></i>
+                </div>
+                <div>
+                    <h2 id="banner-title" class="font-bold text-base">Find the matching transformation rule!</h2>
+                    <p id="banner-subtitle" class="text-xs text-blue-100 mt-0.5">Analyze the rule governing the left pair. Then select the <b>TWO grids on the right</b> that follow the exact same rule.</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0 self-end md:self-auto">
+                <button onclick="clearAllMatrices()" id="clear-all-btn" class="hidden px-3 py-1.5 text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Clear All Matrices
+                </button>
+                <button onclick="showHintModal()" class="px-3 py-1.5 text-xs font-semibold bg-white/20 hover:bg-white/30 rounded-lg transition backdrop-blur-sm">
+                    <i class="fa-solid fa-circle-question mr-1"></i> How to Play
+                </button>
+                <button onclick="resetCurrentLevel()" class="px-3 py-1.5 text-xs font-semibold bg-white text-blue-700 hover:bg-blue-50 rounded-lg shadow transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> New Random Game
+                </button>
+            </div>
+        </div>
+
+        <!-- Palette Selection Tool for Matrix Builder Mode (Hidden in Play Mode) -->
+        <div id="palette-toolbar" class="hidden bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Shape Selector -->
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Shape:</span>
+                <div id="shape-palette" class="flex items-center space-x-2">
+                    <!-- Dynamic Palette Buttons -->
+                </div>
+            </div>
+
+            <!-- Color Selector -->
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Color:</span>
+                <div id="color-palette" class="flex items-center space-x-2">
+                    <!-- Dynamic Palette Colors -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Challenge Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- LEFT CONTAINER: Target Rule Pair (4 Columns on LG) -->
+            <div class="lg:col-span-5 bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+                <div class="w-full flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700/60 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                        <h3 class="font-bold text-sm text-slate-700 dark:text-slate-200">Rule Demonstration</h3>
+                    </div>
+                    <span class="text-xs text-slate-400 font-medium">Left Pair</span>
+                </div>
+
+                <div class="w-full flex flex-col items-center space-y-4">
+                    <!-- Target Grid 1 -->
+                    <div class="w-full max-w-[260px] flex flex-col items-center">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium text-slate-500">Grid 1 (Initial)</span>
+                            <button onclick="clearSingleGrid('targetGrid1')" class="builder-only hidden text-[10px] text-rose-500 hover:underline">Clear Grid</button>
+                        </div>
+                        <div id="target-grid-1" class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-xl p-2 grid grid-cols-3 gap-1.5 shadow-inner">
+                            <!-- JS Generated Grid -->
+                        </div>
+                    </div>
+
+                    <!-- Arrow Indicator -->
+                    <div class="flex items-center space-x-2 text-blue-500 dark:text-blue-400">
+                        <i class="fa-solid fa-arrow-down text-xl"></i>
+                        <span class="text-xs font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800">Rule Applied</span>
+                        <i class="fa-solid fa-arrow-down text-xl"></i>
+                    </div>
+
+                    <!-- Target Grid 2 -->
+                    <div class="w-full max-w-[260px] flex flex-col items-center">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium text-slate-500">Grid 2 (Transformed)</span>
+                            <button onclick="clearSingleGrid('targetGrid2')" class="builder-only hidden text-[10px] text-rose-500 hover:underline">Clear Grid</button>
+                        </div>
+                        <div id="target-grid-2" class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-xl p-2 grid grid-cols-3 gap-1.5 shadow-inner">
+                            <!-- JS Generated Grid -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT CONTAINER: 4 Candidate Options (7 Columns on LG) -->
+            <div class="lg:col-span-7 bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+                <div class="w-full flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700/60 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                        <h3 id="options-title" class="font-bold text-sm text-slate-700 dark:text-slate-200">Select 2 Grids That Follow The Same Rule</h3>
+                    </div>
+                    <span id="selection-counter" class="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full">Selected: 0/2</span>
+                </div>
+
+                <!-- Candidates Grid (2x2) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <!-- Candidate Option 1 -->
+                    <div id="option-card-0" onclick="handleOptionClick(0)" class="candidate-card cursor-pointer bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl p-3 flex flex-col items-center relative transition">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-300 dark:border-slate-600">A</div>
+                            <button onclick="clearSingleGrid('candidate0'); event.stopPropagation();" class="builder-only hidden text-[10px] text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        <div class="absolute top-2 right-2 check-indicator opacity-0 transition-opacity">
+                            <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
+                        </div>
+                        <div id="cand-grid-0" class="w-full max-w-[190px] grid grid-cols-3 gap-1 mt-2 p-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"></div>
+                    </div>
+
+                    <!-- Candidate Option 2 -->
+                    <div id="option-card-1" onclick="handleOptionClick(1)" class="candidate-card cursor-pointer bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl p-3 flex flex-col items-center relative transition">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-300 dark:border-slate-600">B</div>
+                            <button onclick="clearSingleGrid('candidate1'); event.stopPropagation();" class="builder-only hidden text-[10px] text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        <div class="absolute top-2 right-2 check-indicator opacity-0 transition-opacity">
+                            <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
+                        </div>
+                        <div id="cand-grid-1" class="w-full max-w-[190px] grid grid-cols-3 gap-1 mt-2 p-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"></div>
+                    </div>
+
+                    <!-- Candidate Option 3 -->
+                    <div id="option-card-2" onclick="handleOptionClick(2)" class="candidate-card cursor-pointer bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl p-3 flex flex-col items-center relative transition">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-300 dark:border-slate-600">C</div>
+                            <button onclick="clearSingleGrid('candidate2'); event.stopPropagation();" class="builder-only hidden text-[10px] text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        <div class="absolute top-2 right-2 check-indicator opacity-0 transition-opacity">
+                            <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
+                        </div>
+                        <div id="cand-grid-2" class="w-full max-w-[190px] grid grid-cols-3 gap-1 mt-2 p-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"></div>
+                    </div>
+
+                    <!-- Candidate Option 4 -->
+                    <div id="option-card-3" onclick="handleOptionClick(3)" class="candidate-card cursor-pointer bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl p-3 flex flex-col items-center relative transition">
+                        <div class="w-full flex items-center justify-between mb-1">
+                            <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-300 dark:border-slate-600">D</div>
+                            <button onclick="clearSingleGrid('candidate3'); event.stopPropagation();" class="builder-only hidden text-[10px] text-rose-500 hover:underline">Clear</button>
+                        </div>
+                        <div class="absolute top-2 right-2 check-indicator opacity-0 transition-opacity">
+                            <i class="fa-solid fa-circle-check text-blue-500 text-lg"></i>
+                        </div>
+                        <div id="cand-grid-3" class="w-full max-w-[190px] grid grid-cols-3 gap-1 mt-2 p-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"></div>
+                    </div>
+
+                </div>
+
+                <!-- Submit Button Bar -->
+                <div class="mt-6 flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/60">
+                    <span id="submit-hint-text" class="text-xs text-slate-400">Click to select/deselect two options</span>
+                    <button id="submit-btn" onclick="submitAnswer()" disabled class="px-6 py-2.5 rounded-xl font-bold text-sm bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-md transition-all duration-200">
+                        Submit Selection <i class="fa-solid fa-paper-plane ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Practice & Custom Level Sandbox Panel -->
+        <div id="sandbox-panel" class="hidden bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3 mb-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-500"></i>
+                    <h3 class="font-bold text-sm text-slate-800 dark:text-slate-200">Custom Level Builder & Rule Settings</h3>
+                </div>
+                <span class="text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 font-semibold px-2.5 py-0.5 rounded-full">Interactive Builder</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Rule Description / Custom Solution Explanation</label>
+                    <input id="builder-rule-expl" type="text" placeholder="e.g. All circles become crosses" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Auto-Generate Template Matrix</label>
+                    <select id="sandbox-rule-type" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="empty">Start Empty (Blank Matrices)</option>
+                        <option value="substitution">Shape Substitution (e.g. Circle → Square)</option>
+                        <option value="color">Color Mutation Rule</option>
+                        <option value="rotation">Grid Rotation (90° Clockwise/CCW)</option>
+                        <option value="shift">Row/Column Cyclic Shift</option>
+                        <option value="swap">Diagonal Swap</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end space-x-2">
+                    <button onclick="generateCustomLevel()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Apply Template</span>
+                    </button>
+                    <button onclick="testCustomLevel()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Play Created Puzzle</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Feedback / Explanation Modal -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-content">
+            
+            <!-- Modal Header Icon -->
+            <div id="modal-status-icon" class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-md">
+                <!-- Icon inserted via JS -->
+            </div>
+
+            <!-- Result Title -->
+            <h3 id="modal-title" class="text-xl font-bold text-center text-slate-900 dark:text-white mb-2"></h3>
+            
+            <!-- Score Delta -->
+            <p id="modal-score-delta" class="text-center font-bold text-sm mb-4"></p>
+
+            <!-- Explanation Box -->
+            <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-6">
+                <div class="flex items-center space-x-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Rule Explanation</span>
+                </div>
+                <p id="modal-explanation" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                    <!-- Rule details inserted here -->
+                </p>
+            </div>
+
+            <!-- Action Button -->
+            <button id="modal-next-btn" onclick="closeModalAndNext()" class="w-full py-3 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition">
+                Continue to Next Level <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- How to Play / Instructions Modal -->
+    <div id="instruction-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-500"></i> How to Play Inductive Challenge
+                </h3>
+                <button onclick="closeInstructionModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p><b>1. Study the Left Pair:</b> The two grids on the left demonstrate a logical transformation rule from top grid to bottom grid.</p>
+                <p><b>2. Identify the Rule:</b> Rules can include shape substitutions (e.g., all circles become crosses), rotations, color inversions, row/column shifts, or spatial reflections.</p>
+                <p><b>3. Select the Correct Candidates:</b> On the right are 4 candidate grids (A, B, C, D). <b>Exactly TWO</b> of these options form a pair that follows the EXACT same transformation rule.</p>
+                <p><b>4. Submit & Score:</b> Click two candidate cards to select them and click <b>Submit Selection</b> before time runs out!</p>
+            </div>
+
+            <button onclick="closeInstructionModal()" class="w-full mt-6 py-2.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 text-white font-bold rounded-xl text-sm hover:opacity-90 transition">
+                Got it, Let's Play!
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Game Logic -->
+    <script>
+        // Game Constants & Configuration
+        const SHAPES = ['none', 'circle', 'square', 'triangle', 'cross', 'star', 'diamond'];
+        const COLORS = [
+            { name: 'none',   fill: 'transparent', stroke: 'transparent' },
+            { name: 'purple', fill: '#8b5cf6', stroke: '#7c3aed' },
+            { name: 'orange', fill: '#f97316', stroke: '#ea580c' },
+            { name: 'green',  fill: '#10b981', stroke: '#059669' },
+            { name: 'blue',   fill: '#3b82f6', stroke: '#2563eb' },
+            { name: 'red',    fill: '#ef4444', stroke: '#dc2626' }
+        ];
+
+        // Global State Variables
+        let currentLevel = 1;
+        const totalLevels = 10;
+        let score = 0;
+        let timeRemaining = 240; // 4 minutes timer
+        let timerInterval = null;
+        let selectedOptions = [];
+        let currentRuleData = null;
+        let isBuilderMode = false;
+
+        // Active Palette Selections for Builder Mode
+        let activeShape = 'circle';
+        let activeColor = COLORS[1]; // Purple default
+
+        // State storage for 6 matrices (each is a 9-item array of {shape, color})
+        let matricesState = {
+            targetGrid1: Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] })),
+            targetGrid2: Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] })),
+            candidate0:  Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] })),
+            candidate1:  Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] })),
+            candidate2:  Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] })),
+            candidate3:  Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] })),
+        };
+
+        // SVG Shape Renderer
+        function renderShapeSVG(shapeType, colorObj) {
+            if (!shapeType || shapeType === 'none') {
+                return `<div class="w-full h-full opacity-10 border border-dashed border-slate-400 rounded-sm"></div>`;
+            }
+            const fill = colorObj.fill || '#8b5cf6';
+            const stroke = colorObj.stroke || '#7c3aed';
+            let svgContent = '';
+
+            switch(shapeType) {
+                case 'circle':
+                    svgContent = `<circle cx="25" cy="25" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+                    break;
+                case 'square':
+                    svgContent = `<rect x="8" y="8" width="34" height="34" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+                    break;
+                case 'triangle':
+                    svgContent = `<polygon points="25,7 44,40 6,40" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+                    break;
+                case 'cross':
+                    svgContent = `<path d="M18 6h14v12h12v14H32v12H18V32H6V18h12V6z" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+                    break;
+                case 'star':
+                    svgContent = `<polygon points="25,4 31,18 46,18 34,27 38,42 25,32 12,42 16,27 4,18 19,18" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+                    break;
+                case 'diamond':
+                    svgContent = `<polygon points="25,5 44,25 25,45 6,25" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+                    break;
+                default:
+                    svgContent = `<circle cx="25" cy="25" r="16" fill="${fill}"/>`;
+            }
+
+            return `<svg viewBox="0 0 50 50" class="shape-svg">${svgContent}</svg>`;
+        }
+
+        // Initialize Application on Window Load
+        window.onload = function() {
+            initPalette();
+            startTimer();
+            loadLevel(currentLevel);
+        };
+
+        // Setup Palette Tools for Builder Mode
+        function initPalette() {
+            const shapePalette = document.getElementById('shape-palette');
+            const colorPalette = document.getElementById('color-palette');
+            
+            shapePalette.innerHTML = '';
+            colorPalette.innerHTML = '';
+
+            SHAPES.forEach(shape => {
+                const btn = document.createElement('button');
+                btn.className = `w-8 h-8 rounded-lg border flex items-center justify-center p-1 transition ${activeShape === shape ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/40 ring-2 ring-blue-400' : 'border-slate-300 dark:border-slate-600'}`;
+                btn.innerHTML = renderShapeSVG(shape, COLORS[1]);
+                btn.onclick = () => {
+                    activeShape = shape;
+                    initPalette();
+                };
+                shapePalette.appendChild(btn);
+            });
+
+            COLORS.slice(1).forEach(col => {
+                const btn = document.createElement('button');
+                btn.className = `w-7 h-7 rounded-full border-2 transition ${activeColor.name === col.name ? 'ring-2 ring-blue-400 scale-110' : ''}`;
+                btn.style.backgroundColor = col.fill;
+                btn.style.borderColor = col.stroke;
+                btn.onclick = () => {
+                    activeColor = col;
+                    initPalette();
+                };
+                colorPalette.appendChild(btn);
+            });
+        }
+
+        // Timer Logic
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    updateTimerDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('timer-display').innerText = formatted;
+        }
+
+        function handleTimeOut() {
+            showModal(false, "Time's Up!", "You ran out of time for this test module.", 0);
+        }
+
+        // Generate Random Matrix (3x3 array of {shape, color})
+        function generateRandomGrid(shapePool, colorPool) {
+            const grid = [];
+            for(let i=0; i<9; i++) {
+                const shape = shapePool[Math.floor(Math.random() * shapePool.length)];
+                const color = colorPool[Math.floor(Math.random() * colorPool.length)];
+                grid.push({ shape, color });
+            }
+            return grid;
+        }
+
+        // Rule Application Core Engine
+        function applyRuleToGrid(grid, rule) {
+            const newGrid = JSON.parse(JSON.stringify(grid));
+
+            switch (rule.type) {
+                case 'substitution':
+                    return newGrid.map(cell => {
+                        if (cell.shape === rule.targetShape) {
+                            return { ...cell, shape: rule.replacementShape };
+                        }
+                        return cell;
+                    });
+
+                case 'color':
+                    return newGrid.map(cell => {
+                        if (cell.shape === rule.targetShape) {
+                            return { ...cell, color: rule.newColor };
+                        }
+                        return cell;
+                    });
+
+                case 'rotation':
+                    const rotated = new Array(9);
+                    for (let r = 0; r < 3; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            const oldIdx = r * 3 + c;
+                            const newIdx = rule.direction === 'cw' ? (c * 3 + (2 - r)) : ((2 - c) * 3 + r);
+                            rotated[newIdx] = newGrid[oldIdx];
+                        }
+                    }
+                    return rotated;
+
+                case 'shift':
+                    const shifted = new Array(9);
+                    for (let r = 0; r < 3; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            const oldIdx = r * 3 + c;
+                            const newCol = (c + 1) % 3;
+                            const newIdx = r * 3 + newCol;
+                            shifted[newIdx] = newGrid[oldIdx];
+                        }
+                    }
+                    return shifted;
+
+                case 'swap':
+                    const swapped = [...newGrid];
+                    const temp0 = swapped[1]; swapped[1] = swapped[3]; swapped[3] = temp0;
+                    const temp1 = swapped[2]; swapped[2] = swapped[6]; swapped[6] = temp1;
+                    const temp2 = swapped[5]; swapped[5] = swapped[7]; swapped[7] = temp2;
+                    return swapped;
+
+                default:
+                    return newGrid;
+            }
+        }
+
+        // Generate Rules Dynamically
+        function generateRule(level, forcedRuleType = null) {
+            const availableShapes = SHAPES.filter(s => s !== 'none').slice(0, Math.min(3 + Math.floor(level / 3), SHAPES.length - 1));
+            const availableColors = COLORS.filter(c => c.name !== 'none').slice(0, Math.min(3 + Math.floor(level / 4), COLORS.length - 1));
+
+            const ruleTypes = ['substitution', 'color', 'rotation', 'shift', 'swap'];
+            const chosenType = forcedRuleType && forcedRuleType !== 'random' && forcedRuleType !== 'empty' ? forcedRuleType : ruleTypes[Math.floor(Math.random() * (level > 4 ? 5 : 3))];
+
+            let rule = { type: chosenType };
+
+            if (chosenType === 'substitution') {
+                rule.targetShape = availableShapes[0];
+                rule.replacementShape = availableShapes[1];
+                rule.description = `All ${rule.targetShape.toUpperCase()} shapes transform into ${rule.replacementShape.toUpperCase()} shapes.`;
+            } else if (chosenType === 'color') {
+                rule.targetShape = availableShapes[0];
+                rule.newColor = availableColors[1];
+                rule.description = `All ${rule.targetShape.toUpperCase()} shapes change color to ${rule.newColor.name.toUpperCase()}.`;
+            } else if (chosenType === 'rotation') {
+                rule.direction = Math.random() > 0.5 ? 'cw' : 'ccw';
+                rule.description = `The grid rotates 90° ${rule.direction === 'cw' ? 'Clockwise' : 'Counter-Clockwise'}.`;
+            } else if (chosenType === 'shift') {
+                rule.description = `Each row shifts cyclically to the right by one cell.`;
+            } else if (chosenType === 'swap') {
+                rule.description = `Symmetric matrix transpose swap across the diagonal.`;
+            }
+
+            return { rule, shapes: availableShapes, colors: availableColors };
+        }
+
+        // Load Level Puzzles
+        function loadLevel(levelNum) {
+            selectedOptions = [];
+            updateSubmitButton();
+
+            document.getElementById('level-display').innerText = `${levelNum}/${totalLevels}`;
+
+            const { rule, shapes, colors } = generateRule(levelNum);
+            currentRuleData = rule;
+
+            let targetGrid1 = generateRandomGrid(shapes, colors);
+            if (rule.targetShape) {
+                targetGrid1[0].shape = rule.targetShape;
+                targetGrid1[4].shape = rule.targetShape;
+            }
+            let targetGrid2 = applyRuleToGrid(targetGrid1, rule);
+
+            const correctIndices = [];
+            while (correctIndices.length < 2) {
+                const idx = Math.floor(Math.random() * 4);
+                if (!correctIndices.includes(idx)) correctIndices.push(idx);
+            }
+            correctIndices.sort((a,b) => a-b);
+            currentRuleData.correctPair = correctIndices;
+
+            let candA1 = generateRandomGrid(shapes, colors);
+            if (rule.targetShape) {
+                candA1[2].shape = rule.targetShape;
+                candA1[7].shape = rule.targetShape;
+            }
+            let candA2 = applyRuleToGrid(candA1, rule);
+
+            matricesState.targetGrid1 = targetGrid1;
+            matricesState.targetGrid2 = targetGrid2;
+
+            for (let i = 0; i < 4; i++) {
+                if (i === correctIndices[0]) matricesState[`candidate${i}`] = candA1;
+                else if (i === correctIndices[1]) matricesState[`candidate${i}`] = candA2;
+                else matricesState[`candidate${i}`] = generateRandomGrid(shapes, colors);
+            }
+
+            renderAllGrids();
+        }
+
+        // Render Grids with Editable Handles when in Builder Mode
+        function renderAllGrids() {
+            renderGridCells('target-grid-1', matricesState.targetGrid1, 'targetGrid1');
+            renderGridCells('target-grid-2', matricesState.targetGrid2, 'targetGrid2');
+            for (let i = 0; i < 4; i++) {
+                renderGridCells(`cand-grid-${i}`, matricesState[`candidate${i}`], `candidate${i}`);
+                resetOptionCardStyle(i);
+            }
+        }
+
+        function renderGridCells(containerId, gridData, matrixKey) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            gridData.forEach((cell, cellIdx) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = isBuilderMode 
+                    ? 'grid-cell grid-cell-editable bg-slate-100 dark:bg-slate-700/80 rounded-md flex items-center justify-center border border-slate-300 dark:border-slate-500 shadow-sm'
+                    : 'grid-cell bg-slate-100 dark:bg-slate-700/80 rounded-md flex items-center justify-center border border-slate-200/60 dark:border-slate-600/50 shadow-sm';
+                cellDiv.innerHTML = renderShapeSVG(cell.shape, cell.color);
+
+                if (isBuilderMode) {
+                    cellDiv.onclick = (e) => {
+                        e.stopPropagation();
+                        // Edit Cell Shape & Color in Matrix Builder Mode
+                        if (cell.shape === activeShape && cell.color.name === activeColor.name) {
+                            // Toggle Off / Clear Cell
+                            matricesState[matrixKey][cellIdx] = { shape: 'none', color: COLORS[0] };
+                        } else {
+                            matricesState[matrixKey][cellIdx] = { shape: activeShape, color: activeColor };
+                        }
+                        renderGridCells(containerId, matricesState[matrixKey], matrixKey);
+                    };
+                }
+                container.appendChild(cellDiv);
+            });
+        }
+
+        // Clear Single Grid
+        function clearSingleGrid(matrixKey) {
+            matricesState[matrixKey] = Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] }));
+            renderAllGrids();
+        }
+
+        // Clear All Matrices
+        function clearAllMatrices() {
+            Object.keys(matricesState).forEach(key => {
+                matricesState[key] = Array(9).fill(null).map(() => ({ shape: 'none', color: COLORS[0] }));
+            });
+            renderAllGrids();
+        }
+
+        // Toggle Matrix Builder Mode
+        function toggleBuilderMode() {
+            isBuilderMode = !isBuilderMode;
+            const sandboxPanel = document.getElementById('sandbox-panel');
+            const paletteToolbar = document.getElementById('palette-toolbar');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            const modeText = document.getElementById('mode-text');
+            const bannerTitle = document.getElementById('banner-title');
+            const bannerSubtitle = document.getElementById('banner-subtitle');
+            const optionsTitle = document.getElementById('options-title');
+            const builderOnlyBtns = document.querySelectorAll('.builder-only');
+
+            if (isBuilderMode) {
+                sandboxPanel.classList.remove('hidden');
+                paletteToolbar.classList.remove('hidden');
+                paletteToolbar.classList.add('flex');
+                clearAllBtn.classList.remove('hidden');
+                modeText.innerText = "Exit Builder Mode";
+                bannerTitle.innerText = "Matrix Builder Mode";
+                bannerSubtitle.innerText = "Click any cell to place active shape/color. Set the correct 2 answer options below!";
+                optionsTitle.innerText = "Options (Select the 2 Correct Pair Answers)";
+                builderOnlyBtns.forEach(btn => btn.classList.remove('hidden'));
+            } else {
+                sandboxPanel.classList.add('hidden');
+                paletteToolbar.classList.add('hidden');
+                paletteToolbar.classList.remove('flex');
+                clearAllBtn.classList.add('hidden');
+                modeText.innerText = "Matrix Builder";
+                bannerTitle.innerText = "Find the matching transformation rule!";
+                bannerSubtitle.innerText = "Analyze the rule governing the left pair. Then select the TWO grids on the right that follow the exact same rule.";
+                optionsTitle.innerText = "Select 2 Grids That Follow The Same Rule";
+                builderOnlyBtns.forEach(btn => btn.classList.add('hidden'));
+            }
+            renderAllGrids();
+        }
+
+        // Handle Options Interaction (Selecting pairs or designating correct pair in builder mode)
+        function handleOptionClick(index) {
+            selectOption(index);
+        }
+
+        function selectOption(index) {
+            const optionIdx = selectedOptions.indexOf(index);
+            if (optionIdx > -1) {
+                selectedOptions.splice(optionIdx, 1);
+            } else {
+                if (selectedOptions.length < 2) {
+                    selectedOptions.push(index);
+                } else {
+                    selectedOptions.shift();
+                    selectedOptions.push(index);
+                }
+            }
+            updateOptionUI();
+            updateSubmitButton();
+
+            if (isBuilderMode && currentRuleData) {
+                currentRuleData.correctPair = [...selectedOptions];
+            }
+        }
+
+        function updateOptionUI() {
+            for (let i = 0; i < 4; i++) {
+                const card = document.getElementById(`option-card-${i}`);
+                const check = card.querySelector('.check-indicator');
+                if (selectedOptions.includes(i)) {
+                    card.classList.add('border-blue-500', 'ring-2', 'ring-blue-400/40', 'bg-blue-50/30', 'dark:bg-blue-950/30');
+                    card.classList.remove('border-slate-200', 'dark:border-slate-700');
+                    check.classList.remove('opacity-0');
+                } else {
+                    resetOptionCardStyle(i);
+                }
+            }
+            document.getElementById('selection-counter').innerText = `Selected: ${selectedOptions.length}/2`;
+        }
+
+        function resetOptionCardStyle(i) {
+            const card = document.getElementById(`option-card-${i}`);
+            const check = card.querySelector('.check-indicator');
+            card.className = "candidate-card cursor-pointer bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl p-3 flex flex-col items-center relative transition";
+            check.classList.add('opacity-0');
+        }
+
+        function updateSubmitButton() {
+            const btn = document.getElementById('submit-btn');
+            if (selectedOptions.length === 2) {
+                btn.disabled = false;
+                btn.className = "px-6 py-2.5 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 cursor-pointer transition-all duration-200 active:scale-95";
+            } else {
+                btn.disabled = true;
+                btn.className = "px-6 py-2.5 rounded-xl font-bold text-sm bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-md transition-all duration-200";
+            }
+        }
+
+        // Submit Answer Logic
+        function submitAnswer() {
+            if (selectedOptions.length !== 2) return;
+
+            const isCorrect = selectedOptions.sort().join(',') === (currentRuleData.correctPair || []).sort().join(',');
+            
+            if (isCorrect) {
+                const pointsGained = 100 + (currentLevel * 10);
+                score += pointsGained;
+                document.getElementById('score-display').innerText = `${score} PTS`;
+                showModal(true, "Correct Answer!", `Great job! You identified the exact rule pair correctly.`, `+${pointsGained} Points`);
+            } else {
+                const optionLabels = ['A', 'B', 'C', 'D'];
+                const correctLabels = (currentRuleData.correctPair || []).map(i => optionLabels[i]).join(' & ');
+                showModal(false, "Incorrect Pair", `The correct pair following this rule was <b>${correctLabels || 'not set'}</b>.`, "0 Points");
+            }
+        }
+
+        function showModal(isSuccess, title, subtext, delta) {
+            const modal = document.getElementById('feedback-modal');
+            const iconContainer = document.getElementById('modal-status-icon');
+            const titleEl = document.getElementById('modal-title');
+            const deltaEl = document.getElementById('modal-score-delta');
+            const explEl = document.getElementById('modal-explanation');
+
+            titleEl.innerText = title;
+            deltaEl.innerText = delta;
+            deltaEl.className = isSuccess ? "text-center font-bold text-sm mb-4 text-emerald-500" : "text-center font-bold text-sm mb-4 text-rose-500";
+            explEl.innerHTML = `${subtext}<br/><br/><b>Rule Description:</b> ${currentRuleData.description || 'Custom Rule'}`;
+
+            if (isSuccess) {
+                iconContainer.className = "w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            } else {
+                iconContainer.className = "w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-md bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
+                modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModalAndNext() {
+            const modal = document.getElementById('feedback-modal');
+            modal.querySelector('.modal-content').classList.remove('scale-100', 'opacity-100');
+            modal.querySelector('.modal-content').classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (!isBuilderMode) {
+                    if (currentLevel < totalLevels) {
+                        currentLevel++;
+                        loadLevel(currentLevel);
+                    } else {
+                        alert(`Congratulations! Completed all levels! Final Score: ${score}`);
+                        currentLevel = 1;
+                        score = 0;
+                        timeRemaining = 240;
+                        document.getElementById('score-display').innerText = '0 PTS';
+                        loadLevel(currentLevel);
+                    }
+                }
+            }, 200);
+        }
+
+        // Custom Level Template / Sandbox Auto-Fill
+        function generateCustomLevel() {
+            const ruleType = document.getElementById('sandbox-rule-type').value;
+
+            if (ruleType === 'empty') {
+                clearAllMatrices();
+                currentRuleData = { type: 'custom', description: document.getElementById('builder-rule-expl').value || 'Custom empty matrices created by user.' };
+                return;
+            }
+
+            const shapes = SHAPES.filter(s => s !== 'none').slice(0, 4);
+            const colors = COLORS.filter(c => c.name !== 'none').slice(0, 4);
+
+            selectedOptions = [];
+            updateSubmitButton();
+
+            const { rule } = generateRule(currentLevel, ruleType);
+            currentRuleData = rule;
+
+            let targetGrid1 = generateRandomGrid(shapes, colors);
+            if (rule.targetShape) {
+                targetGrid1[1].shape = rule.targetShape;
+                targetGrid1[5].shape = rule.targetShape;
+            }
+            let targetGrid2 = applyRuleToGrid(targetGrid1, rule);
+
+            matricesState.targetGrid1 = targetGrid1;
+            matricesState.targetGrid2 = targetGrid2;
+
+            const correctIndices = [0, 2];
+            currentRuleData.correctPair = correctIndices;
+
+            let candA1 = generateRandomGrid(shapes, colors);
+            if (rule.targetShape) candA1[3].shape = rule.targetShape;
+            let candA2 = applyRuleToGrid(candA1, rule);
+
+            matricesState.candidate0 = candA1;
+            matricesState.candidate1 = generateRandomGrid(shapes, colors);
+            matricesState.candidate2 = candA2;
+            matricesState.candidate3 = generateRandomGrid(shapes, colors);
+
+            renderAllGrids();
+        }
+
+        function testCustomLevel() {
+            if (selectedOptions.length !== 2) {
+                alert("Please select 2 candidate options (A, B, C, or D) to mark as the correct pair before playing!");
+                return;
+            }
+            const customExpl = document.getElementById('builder-rule-expl').value;
+            currentRuleData = {
+                type: 'custom',
+                correctPair: [...selectedOptions],
+                description: customExpl || 'Custom rule crafted in Matrix Builder Mode.'
+            };
+            toggleBuilderMode();
+        }
+
+        function resetCurrentLevel() {
+            if (isBuilderMode) {
+                clearAllMatrices();
+            } else {
+                loadLevel(currentLevel);
+            }
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function showHintModal() {
+            document.getElementById('instruction-modal').classList.remove('hidden');
+        }
+
+        function closeInstructionModal() {
+            document.getElementById('instruction-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
